@@ -14,3 +14,9 @@ or
 ## Roadmap
 
 todo
+
+## Development Resources:
+
+ - [SyntaxAnalysis](https://github.com/dotnet/roslyn/wiki/Getting-Started-C%23-Syntax-Analysis)
+ 
+ 
