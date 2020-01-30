@@ -109,6 +109,53 @@ namespace FormDesigner_CS2IPY
 
             switch (node.Kind())
             {
+                case SyntaxKind.InvocationExpression:
+                    // Looking for interface cast invocation (e.g. the ISupportInitialize interface)
+                    var error = false;
+                    try
+                    {
+                        var node_cast = node
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.SimpleMemberAccessExpression)).Single()
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.ParenthesizedExpression)).Single()
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.CastExpression)).Single();
+                        var node_qn = node_cast
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.QualifiedName)).Single();
+                        var node_pe = node_cast
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.ParenthesizedExpression)).Single();
+                        var node_in = node
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.SimpleMemberAccessExpression)).Single()
+                            .ChildNodes().Where(n => n.IsKind(SyntaxKind.IdentifierName)).Single();
+
+                        // TODO: make sure that there's nothing in the invocation has 0 argument
+
+                        /**
+                         *
+                         *  C#:
+                         *      ((node_qn)(node_pe)).node_in()
+                         *
+                         *  -> Python:
+                         *      (node_qn).node_in(node_pe)
+                         *      
+                         *  Reference:
+                         *      https://mail.python.org/pipermail/ironpython-users/2006-February/001800.html
+                         * 
+                         **/
+                        pyWriter.Append(String.Format("{0}.{1}({2})",
+                           processNode(pyWriter, node_qn),
+                           processNode(pyWriter, node_in),
+                           processNode(pyWriter, node_pe)
+                        ));
+
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        error = true;
+                    } 
+                    if (error)
+                    {
+                        pyWriter.Append(processNodes(pyWriter, node.ChildNodes()));
+                    }
+                    break;
                 case SyntaxKind.ArrayCreationExpression:
 
                     var _nodeAT = from _n in node.ChildNodes().OfType<ArrayTypeSyntax>() select _n;
